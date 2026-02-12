@@ -5,6 +5,8 @@ const CHUNK_SIZE = 16
 
 var chunk_position : Vector3i
 var noise : FastNoiseLite
+signal chunk_ready(pos)
+
 var world : Node3D # VoxelWorld
 var mesh_instance : MeshInstance3D
 var collision_shape : CollisionShape3D
@@ -54,6 +56,8 @@ func generate():
 			collision_shape.shape = shape
 		else:
 			print("Error: Could not create trimesh shape for chunk ", chunk_position)
+
+	emit_signal("chunk_ready", chunk_position)
 
 func get_block_type(pos : Vector3i):
 	# Check modified blocks

@@ -7,6 +7,8 @@ var age_label : Label
 var quest_label : Label
 var inventory_label : Label
 var break_progress : ProgressBar
+var hotbar_container : HBoxContainer
+var hotbar_slots = []
 
 var craft_axe_btn : Button
 var craft_campfire_btn : Button
@@ -36,8 +38,60 @@ func _ready():
 	thirst_label = Label.new()
 	vbox.add_child(thirst_label)
 
-	inventory_label = Label.new()
-	vbox.add_child(inventory_label)
+	# Removed old text inventory
+	# inventory_label = Label.new()
+	# vbox.add_child(inventory_label)
+
+	# Hotbar (Bottom Center)
+	hotbar_container = HBoxContainer.new()
+	hotbar_container.set_anchors_preset(Control.PRESET_BOTTOM_WIDE) # Or CENTER_BOTTOM
+	hotbar_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	hotbar_container.custom_minimum_size = Vector2(0, 80)
+	hotbar_container.position.y = -100 # Offset manually if needed
+	hotbar_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	hotbar_container.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	hotbar_container.anchor_top = 1.0
+	hotbar_container.anchor_bottom = 1.0
+	hotbar_container.offset_bottom = -20 # Margin from bottom
+	hotbar_container.offset_top = -100
+	add_child(hotbar_container)
+
+	for i in range(5):
+		var slot = Panel.new()
+		slot.custom_minimum_size = Vector2(80, 80)
+		var lbl = Label.new()
+		lbl.text = ""
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+		slot.add_child(lbl)
+		hotbar_container.add_child(slot)
+		hotbar_slots.append({"panel": slot, "label": lbl})
+
+	# Crosshair (Center)
+	var crosshair = ColorRect.new()
+	crosshair.set_anchors_preset(Control.PRESET_CENTER)
+	crosshair.custom_minimum_size = Vector2(4, 4)
+	crosshair.color = Color(1, 1, 1, 0.8)
+	crosshair.position = -crosshair.custom_minimum_size / 2 # Center pivot manually?
+	# Actually PRESET_CENTER centers it relative to parent size, but origin is top-left.
+	# We need to offset by half size.
+	# But let's just use CenterContainer if needed, or simple offset logic.
+	# A 4x4 rect at center is fine.
+	add_child(crosshair)
+	# Fix position after adding?
+	# Better to use a CenterContainer for crosshair? Overkill.
+	# Just set position in _process or use anchors with offset.
+	crosshair.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	crosshair.grow_vertical = Control.GROW_DIRECTION_BOTH
+	crosshair.anchor_left = 0.5
+	crosshair.anchor_top = 0.5
+	crosshair.anchor_right = 0.5
+	crosshair.anchor_bottom = 0.5
+	crosshair.offset_left = -2
+	crosshair.offset_top = -2
+	crosshair.offset_right = 2
+	crosshair.offset_bottom = 2
 
 	# Break Progress Bar (Center)
 	break_progress = ProgressBar.new()
@@ -119,10 +173,18 @@ func _on_quest_completed(desc):
 	quest_label.text = "Completed: " + desc
 
 func _on_inventory_changed():
-	var text = "Inventory:\n"
-	for item in Global.player_inventory:
-		text += item + ": " + str(Global.player_inventory[item]) + "\n"
-	inventory_label.text = text
+	# Simple visualization: Fill slots with inventory items
+	var items = Global.player_inventory.keys()
+	for i in range(hotbar_slots.size()):
+		var slot = hotbar_slots[i]
+		if i < items.size():
+			var item = items[i]
+			var count = Global.player_inventory[item]
+			slot["label"].text = item + "\n" + str(count)
+			slot["panel"].modulate = Color(1, 1, 1, 1) # Active
+		else:
+			slot["label"].text = ""
+			slot["panel"].modulate = Color(0.5, 0.5, 0.5, 0.5) # Empty
 
 func _on_craft_axe():
 	CraftingSystem.craft("stone_axe")
