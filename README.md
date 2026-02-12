@@ -31,6 +31,7 @@ This is a Godot 4.3 project designed for mobile-first development. It includes a
 ## Features
 
 -   **Infinite Voxel World:** Procedurally generated terrain.
+-   **Chunk Loading System:** Deterministic loading screen ensures no falling through map.
 -   **Survival Stats:** Hunger, Thirst, Health.
 -   **Age System:** Currently in "Primal Age". Complete quests to advance.
 -   **Crafting:** Craft Stone Axe, Campfire, etc.

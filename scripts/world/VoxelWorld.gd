@@ -10,8 +10,16 @@ var chunks = {}
 var modified_blocks = {} # Vector3i -> BlockData.Type
 var player : Node3D
 
+signal initial_chunks_generated
+signal chunk_generated(pos)
+
 var generation_queue = []
 var chunks_pending = {} # Set of pending chunks
+
+# Initial Load Tracking
+var initial_load_complete = false
+var initial_chunks_target = 0
+var initial_chunks_ready = 0
 
 func _ready():
 	noise = FastNoiseLite.new()
@@ -20,7 +28,18 @@ func _ready():
 	noise.fractal_octaves = 4
 
 	# Initial generation around origin if no player yet
-	update_chunks(Vector3.ZERO)
+	# Define initial load area (3x3 chunks around 0,0)
+	# This covers -1 to 1 in X and Z, and 0 to 3 in Y
+	for x in range(-1, 2):
+		for z in range(-1, 2):
+			for y in range(0, 4):
+				var pos = Vector3i(x, y, z)
+				initial_chunks_target += 1
+				if not chunks.has(pos) and not chunks_pending.has(pos):
+					chunks_pending[pos] = true
+					generation_queue.append(pos)
+
+	print("Initial Chunks Target: ", initial_chunks_target)
 
 func _process(delta):
 	if player:
@@ -56,8 +75,27 @@ func create_chunk(pos : Vector3i):
 	var chunk = VoxelChunk.new(pos, noise, self)
 	add_child(chunk)
 	chunk.position = Vector3(pos.x * CHUNK_SIZE, pos.y * CHUNK_SIZE, pos.z * CHUNK_SIZE)
+	# Connect signal
+	chunk.chunk_ready.connect(_on_chunk_ready)
 	chunk.generate()
 	chunks[pos] = chunk
+
+func _on_chunk_ready(pos):
+	if not initial_load_complete:
+		initial_chunks_ready += 1
+		if initial_chunks_ready >= initial_chunks_target:
+			initial_load_complete = true
+			emit_signal("initial_chunks_generated")
+			print("Initial Chunks Generated!")
+
+	emit_signal("chunk_generated", pos)
+
+func get_height_at(x, z):
+	# Helper to find surface height
+	# This recalculates based on noise which is consistent with generation
+	# Faster than raycasting if physics isn't ready
+	var height = int((noise.get_noise_2d(x, z) + 1.0) * 0.5 * 32.0) + 16
+	return height
 
 func set_block(global_pos : Vector3i, type):
 	modified_blocks[global_pos] = type
