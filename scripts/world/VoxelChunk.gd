@@ -49,7 +49,11 @@ func generate():
 
 	# Generate collision shape
 	if mesh.get_surface_count() > 0:
-		collision_shape.shape = mesh.create_trimesh_shape()
+		var shape = mesh.create_trimesh_shape()
+		if shape:
+			collision_shape.shape = shape
+		else:
+			print("Error: Could not create trimesh shape for chunk ", chunk_position)
 
 func get_block_type(pos : Vector3i):
 	# Check modified blocks

@@ -21,10 +21,11 @@ This is a Godot 4.3 project designed for mobile-first development. It includes a
 
 ## Controls
 
--   **Left Stick (Touch):** Move character.
--   **Right Screen (Drag):** Rotate camera / Look around.
--   **Break Button:** Hold to break blocks (center of screen).
--   **Place Button:** Tap to place blocks (center of screen).
+-   **Left Joystick (Visual):** Move character.
+-   **Right Joystick (Visual):** Rotate camera / Look around.
+-   **Interact:**
+    -   **Tap Right Side:** Place Block.
+    -   **Hold Right Side:** Break Block (with progress bar).
 -   **Crafting:** Use the buttons on the bottom right to craft items.
 
 ## Features

@@ -12,6 +12,8 @@ var collision_shape : CollisionShape3D
 var world : Node3D # VoxelWorld
 
 func _ready():
+	add_to_group("player")
+
 	# Setup nodes programmatically
 	collision_shape = CollisionShape3D.new()
 	var shape = CapsuleShape3D.new()
@@ -61,6 +63,10 @@ func _physics_process(delta):
 
 	Global.player_position = global_position
 
+# Breaking Logic
+var break_timer = 0.0
+var max_break_time = 0.8 # Seconds (Primal Age default)
+
 func _process(delta):
 	# Handle Interaction
 	if raycast.is_colliding():
@@ -69,29 +75,37 @@ func _process(delta):
 			var point = raycast.get_collision_point()
 			var normal = raycast.get_collision_normal()
 
-			if Global.input_break:
-				var block_pos = Vector3i(floor(point.x - normal.x * 0.5), floor(point.y - normal.y * 0.5), floor(point.z - normal.z * 0.5))
-				# Remove block (set to AIR)
-				# Need access to World
-				if world and world.has_method("set_block"):
-					world.set_block(block_pos, 0) # 0 is AIR
-					# Add item to inventory (randomly determine what it was)
-					# Ideally we check what block it was before removing
-					# For now, just add wood/stone based on height or random
-					if block_pos.y > 10:
-						Global.add_item("wood", 1)
-					else:
-						Global.add_item("stone", 1)
-				Global.input_break = false # Single click
+			# Breaking (Hold)
+			if Global.is_breaking:
+				break_timer += delta
+				if break_timer >= max_break_time:
+					var block_pos = Vector3i(floor(point.x - normal.x * 0.5), floor(point.y - normal.y * 0.5), floor(point.z - normal.z * 0.5))
+					# Remove block (set to AIR)
+					if world and world.has_method("set_block"):
+						world.set_block(block_pos, 0) # 0 is AIR
+						# Simple drop logic
+						if block_pos.y > 10:
+							Global.add_item("wood", 1)
+						else:
+							Global.add_item("stone", 1)
 
-			elif Global.input_place:
+					break_timer = 0.0
+					# Do not force reset global, let player hold to keep breaking
+					# Global.is_breaking = false
+			else:
+				break_timer = 0.0
+
+			# Placing (Tap)
+			if Global.is_placing:
 				var block_pos = Vector3i(floor(point.x + normal.x * 0.5), floor(point.y + normal.y * 0.5), floor(point.z + normal.z * 0.5))
 				if world and world.has_method("set_block"):
 					# Place block (Stone for now)
 					if Global.has_item("stone", 1):
 						world.set_block(block_pos, 3) # 3 is STONE
 						Global.remove_item("stone", 1)
-				Global.input_place = false
+				Global.is_placing = false
+	else:
+		break_timer = 0.0
 
 	# Handle Look
 	if Global.input_look != Vector2.ZERO:

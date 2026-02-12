@@ -18,8 +18,11 @@ var player_inventory = {}
 var input_move = Vector2.ZERO
 var input_look = Vector2.ZERO
 var input_jump = false
-var input_break = false
-var input_place = false
+# Removed boolean input_break/place favor of function calls or signals,
+# but for now we will keep them as instantaneous triggers or states.
+# Actually, for "Hold to break", we need a continuous state in Player.
+var is_breaking = false
+var is_placing = false
 
 func _ready():
 	print("Agebound Survival initialized. Current Age: ", current_age)

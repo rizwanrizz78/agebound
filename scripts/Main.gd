@@ -27,7 +27,12 @@ func _ready():
 	player = PlayerScene.instantiate()
 	player.name = "Player"
 	add_child(player)
-	player.position = Vector3(0, 40, 0) # Spawn high to avoid falling through terrain immediately
+
+	# Spawn Logic: Start high, but disable physics until ready
+	player.position = Vector3(0, 60, 0)
+	player.velocity = Vector3.ZERO
+	# Wait for chunks to generate
+	await get_tree().create_timer(1.0).timeout
 
 	# Link Player and World
 	if "world" in player:
