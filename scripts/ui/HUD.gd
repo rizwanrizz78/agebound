@@ -9,6 +9,9 @@ var inventory_label : Label
 var break_progress : ProgressBar
 var hotbar_container : HBoxContainer
 var hotbar_slots = []
+var backpack_panel : Panel
+var backpack_grid : GridContainer
+var is_inventory_open = false
 
 var craft_axe_btn : Button
 var craft_campfire_btn : Button
@@ -56,9 +59,10 @@ func _ready():
 	hotbar_container.offset_top = -100
 	add_child(hotbar_container)
 
-	for i in range(5):
+	# 9 Slots
+	for i in range(9):
 		var slot = Panel.new()
-		slot.custom_minimum_size = Vector2(80, 80)
+		slot.custom_minimum_size = Vector2(60, 60) # Slightly smaller to fit 9
 		var lbl = Label.new()
 		lbl.text = ""
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -71,27 +75,82 @@ func _ready():
 	# Crosshair (Center)
 	var crosshair = ColorRect.new()
 	crosshair.set_anchors_preset(Control.PRESET_CENTER)
-	crosshair.custom_minimum_size = Vector2(4, 4)
+	crosshair.custom_minimum_size = Vector2(24, 4) # Horizontal bar
 	crosshair.color = Color(1, 1, 1, 0.8)
-	crosshair.position = -crosshair.custom_minimum_size / 2 # Center pivot manually?
-	# Actually PRESET_CENTER centers it relative to parent size, but origin is top-left.
-	# We need to offset by half size.
-	# But let's just use CenterContainer if needed, or simple offset logic.
-	# A 4x4 rect at center is fine.
+	crosshair.position = -crosshair.custom_minimum_size / 2
 	add_child(crosshair)
-	# Fix position after adding?
-	# Better to use a CenterContainer for crosshair? Overkill.
-	# Just set position in _process or use anchors with offset.
+
+	var crosshair_v = ColorRect.new()
+	crosshair_v.set_anchors_preset(Control.PRESET_CENTER)
+	crosshair_v.custom_minimum_size = Vector2(4, 24) # Vertical bar
+	crosshair_v.color = Color(1, 1, 1, 0.8)
+	crosshair_v.position = -crosshair_v.custom_minimum_size / 2
+	add_child(crosshair_v)
+
+	# Ensure proper centering
 	crosshair.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	crosshair.grow_vertical = Control.GROW_DIRECTION_BOTH
 	crosshair.anchor_left = 0.5
 	crosshair.anchor_top = 0.5
 	crosshair.anchor_right = 0.5
 	crosshair.anchor_bottom = 0.5
-	crosshair.offset_left = -2
+	crosshair.offset_left = -12
 	crosshair.offset_top = -2
-	crosshair.offset_right = 2
+	crosshair.offset_right = 12
 	crosshair.offset_bottom = 2
+
+	crosshair_v.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	crosshair_v.grow_vertical = Control.GROW_DIRECTION_BOTH
+	crosshair_v.anchor_left = 0.5
+	crosshair_v.anchor_top = 0.5
+	crosshair_v.anchor_right = 0.5
+	crosshair_v.anchor_bottom = 0.5
+	crosshair_v.offset_left = -2
+	crosshair_v.offset_top = -12
+	crosshair_v.offset_right = 2
+	crosshair_v.offset_bottom = 12
+
+	# Inventory Toggle Button (Top Right)
+	var inv_btn = Button.new()
+	inv_btn.text = "INV"
+	inv_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	inv_btn.position = Vector2(-100, 20)
+	inv_btn.pressed.connect(_toggle_inventory)
+	add_child(inv_btn)
+
+	# Backpack UI (Hidden by default)
+	backpack_panel = Panel.new()
+	backpack_panel.set_anchors_preset(Control.PRESET_CENTER)
+	backpack_panel.custom_minimum_size = Vector2(600, 400)
+	backpack_panel.position = Vector2(-300, -200) # Offset center
+	add_child(backpack_panel)
+	backpack_panel.hide()
+
+	var bp_label = Label.new()
+	bp_label.text = "BACKPACK"
+	bp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bp_label.position.y = 10
+	bp_label.custom_minimum_size.x = 600
+	backpack_panel.add_child(bp_label)
+
+	backpack_grid = GridContainer.new()
+	backpack_grid.columns = 6
+	backpack_grid.set_anchors_preset(Control.PRESET_CENTER)
+	backpack_grid.position = Vector2(50, 50)
+	backpack_panel.add_child(backpack_grid)
+
+	# Create 24 slots
+	for i in range(24):
+		var slot = Panel.new()
+		slot.custom_minimum_size = Vector2(70, 70)
+		# Just visuals for prototype
+		var lbl = Label.new()
+		lbl.text = "Empty"
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+		slot.add_child(lbl)
+		backpack_grid.add_child(slot)
 
 	# Break Progress Bar (Center)
 	break_progress = ProgressBar.new()
@@ -175,6 +234,8 @@ func _on_quest_completed(desc):
 func _on_inventory_changed():
 	# Simple visualization: Fill slots with inventory items
 	var items = Global.player_inventory.keys()
+
+	# Update Hotbar
 	for i in range(hotbar_slots.size()):
 		var slot = hotbar_slots[i]
 		if i < items.size():
@@ -185,6 +246,28 @@ func _on_inventory_changed():
 		else:
 			slot["label"].text = ""
 			slot["panel"].modulate = Color(0.5, 0.5, 0.5, 0.5) # Empty
+
+	# Update Backpack (Duplicate for prototype)
+	# Ideally backpack shows ALL items, hotbar shows selected.
+	# For now, just mirror or fill.
+	if backpack_grid:
+		for i in range(backpack_grid.get_child_count()):
+			var slot = backpack_grid.get_child(i)
+			var lbl = slot.get_child(0)
+			if i < items.size():
+				var item = items[i]
+				var count = Global.player_inventory[item]
+				lbl.text = item + "\nx" + str(count)
+			else:
+				lbl.text = ""
+
+func _toggle_inventory():
+	is_inventory_open = !is_inventory_open
+	if is_inventory_open:
+		backpack_panel.show()
+		# Release mouse if on PC, but on mobile it's fine
+	else:
+		backpack_panel.hide()
 
 func _on_craft_axe():
 	CraftingSystem.craft("stone_axe")
