@@ -31,10 +31,15 @@ func _ready():
 	head.add_child(camera)
 	camera.current = true
 
+	# Add Hands (Embodiment)
+	_setup_hands()
+
 	raycast = RayCast3D.new()
 	camera.add_child(raycast)
-	raycast.target_position = Vector3(0, 0, -4) # 4 meters range
+	raycast.target_position = Vector3(0, 0, -5) # 5 meters range
 	raycast.enabled = true
+	raycast.collision_mask = 1 # Terrain only? Need to ensure
+	raycast.exclude_parent = true # Should ignore player
 
 	Global.player_position = global_position
 
@@ -68,6 +73,9 @@ var break_timer = 0.0
 var max_break_time = 0.8 # Seconds (Primal Age default)
 
 func _process(delta):
+	# Handle Hand Animation (Sway)
+	_process_hand_sway(delta)
+
 	# Handle Interaction
 	if raycast.is_colliding():
 		var collider = raycast.get_collider()
@@ -119,9 +127,64 @@ func _process(delta):
 	if Global.input_look != Vector2.ZERO:
 		# Use sensitivity directly
 		var look = Global.input_look
+		# Yaw on Body
 		rotate_y(deg_to_rad(-look.x))
-		# Rotate head for pitch
+		# Pitch on Head/Camera
 		if head:
 			head.rotate_x(deg_to_rad(-look.y))
-			head.rotation.x = clamp(head.rotation.x, deg_to_rad(-89), deg_to_rad(89))
+			# Clamp Vertical Rotation (-80 to 80 degrees)
+			head.rotation.x = clamp(head.rotation.x, deg_to_rad(-80), deg_to_rad(80))
 		Global.input_look = Vector2.ZERO # Reset input
+
+# Hand Visuals
+var hand_node : Node3D
+
+func _setup_hands():
+	hand_node = Node3D.new()
+	camera.add_child(hand_node)
+	hand_node.position = Vector3(0.5, -0.4, -0.6) # Bottom right
+	hand_node.rotation_degrees = Vector3(0, -10, 0)
+
+	# Arm
+	var arm_mesh = MeshInstance3D.new()
+	var box = BoxMesh.new()
+	box.size = Vector3(0.15, 0.6, 0.15)
+	arm_mesh.mesh = box
+	# Simple skin material
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(0.8, 0.6, 0.4)
+	arm_mesh.material_override = mat
+	hand_node.add_child(arm_mesh)
+	arm_mesh.position.y = -0.3 # Offset so top is at origin
+
+	# Tool/Hand
+	var tool_mesh = MeshInstance3D.new()
+	var tool_box = BoxMesh.new()
+	tool_box.size = Vector3(0.18, 0.18, 0.18)
+	tool_mesh.mesh = tool_box
+	var tool_mat = StandardMaterial3D.new()
+	tool_mat.albedo_color = Color(0.3, 0.3, 0.3) # Stone
+	tool_mesh.material_override = tool_mat
+	hand_node.add_child(tool_mesh)
+	tool_mesh.position.y = 0.0
+	tool_mesh.position.z = -0.1
+
+func _process_hand_sway(delta):
+	if hand_node:
+		# Simple sway based on input/velocity
+		var target_pos = Vector3(0.5, -0.4, -0.6)
+		var target_rot = Vector3(0, deg_to_rad(-10), 0)
+
+		if velocity.length() > 0.1:
+			var time = Time.get_ticks_msec() / 200.0
+			target_pos.y += sin(time) * 0.05
+			target_pos.x += cos(time * 0.5) * 0.02
+
+		if Global.is_breaking:
+			# Swing animation
+			var time = Time.get_ticks_msec() / 100.0
+			target_rot.x += sin(time * 10.0) * 0.5
+			target_pos.z -= abs(sin(time * 10.0)) * 0.2
+
+		hand_node.position = hand_node.position.lerp(target_pos, delta * 5.0)
+		hand_node.rotation = hand_node.rotation.lerp(target_rot, delta * 10.0)

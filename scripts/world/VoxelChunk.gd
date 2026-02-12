@@ -30,6 +30,7 @@ func generate():
 	var material = StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
 	material.roughness = 1.0
+
 	mesh_instance.material_override = material
 
 	for x in range(CHUNK_SIZE):
@@ -64,14 +65,19 @@ func get_block_type(pos : Vector3i):
 	if world.modified_blocks.has(pos):
 		return world.modified_blocks[pos]
 
-	# Simple terrain generation logic
-	# Use noise for height map
+	# Base Terrain Height
 	var height = int((noise.get_noise_2d(pos.x, pos.z) + 1.0) * 0.5 * 32.0) + 16
 
+	# Cave Generation (3D Noise)
+	if pos.y < height and pos.y < 30: # Only carve below surface
+		# Use a different frequency for caves
+		var cave_noise = noise.get_noise_3d(pos.x * 2.0, pos.y * 2.0, pos.z * 2.0)
+		if cave_noise > 0.4: # Threshold for air pockets
+			return BlockData.Type.AIR
+
 	# Tree Logic
-	# Use a pseudo-random check based on position (deterministic)
-	var tree_noise = noise.get_noise_2d(pos.x * 2.5, pos.z * 2.5) # Different scale
-	var is_tree_pos = (tree_noise > 0.6) and (height > 20) # Only on high ground/grass
+	var tree_noise = noise.get_noise_2d(pos.x * 2.5, pos.z * 2.5)
+	var is_tree_pos = (tree_noise > 0.6) and (height > 20)
 
 	if is_tree_pos:
 		if pos.y > height and pos.y <= height + 4:
@@ -82,7 +88,7 @@ func get_block_type(pos : Vector3i):
 	if pos.y > height:
 		return BlockData.Type.AIR
 	elif pos.y == height:
-		if pos.y < 20: # Water level or sand level?
+		if pos.y < 20:
 			return BlockData.Type.SAND
 		return BlockData.Type.GRASS
 	elif pos.y > height - 4:
@@ -97,10 +103,10 @@ func create_block_mesh(st : SurfaceTool, x, y, z, type, global_pos):
 	# Check neighbors (simple check against noise function)
 	# Top
 	if get_block_type(global_pos + Vector3i(0, 1, 0)) == BlockData.Type.AIR:
-		add_face(st, Vector3(x, y+1, z), Vector3(x+1, y+1, z), Vector3(x+1, y+1, z+1), Vector3(x, y+1, z+1), Vector3.UP)
+		add_face(st, Vector3(x, y+1, z+1), Vector3(x+1, y+1, z+1), Vector3(x+1, y+1, z), Vector3(x, y+1, z), Vector3.UP)
 	# Bottom
 	if get_block_type(global_pos + Vector3i(0, -1, 0)) == BlockData.Type.AIR:
-		add_face(st, Vector3(x, y, z+1), Vector3(x+1, y, z+1), Vector3(x+1, y, z), Vector3(x, y, z), Vector3.DOWN)
+		add_face(st, Vector3(x, y, z), Vector3(x+1, y, z), Vector3(x+1, y, z+1), Vector3(x, y, z+1), Vector3.DOWN)
 	# Left
 	if get_block_type(global_pos + Vector3i(-1, 0, 0)) == BlockData.Type.AIR:
 		add_face(st, Vector3(x, y, z), Vector3(x, y, z+1), Vector3(x, y+1, z+1), Vector3(x, y+1, z), Vector3.LEFT)
@@ -116,10 +122,18 @@ func create_block_mesh(st : SurfaceTool, x, y, z, type, global_pos):
 
 func add_face(st : SurfaceTool, v1, v2, v3, v4, normal):
 	st.set_normal(normal)
+	# Simple UVs mapping 0..1 based on vertex pos (local)
+	# This aligns texture to block grid
+	st.set_uv(Vector2(0, 0))
 	st.add_vertex(v1)
+	st.set_uv(Vector2(1, 0))
 	st.add_vertex(v2)
+	st.set_uv(Vector2(1, 1))
 	st.add_vertex(v3)
 
+	st.set_uv(Vector2(0, 0))
 	st.add_vertex(v1)
+	st.set_uv(Vector2(1, 1))
 	st.add_vertex(v3)
+	st.set_uv(Vector2(0, 1))
 	st.add_vertex(v4)

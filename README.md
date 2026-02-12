@@ -26,7 +26,7 @@ This is a Godot 4.3 project designed for mobile-first development. It includes a
 -   **Interact:**
     -   **Tap Right Side:** Place Block.
     -   **Hold Right Side:** Break Block (with progress bar).
--   **UI:** Visual Hotbar showing items, Crosshair for aiming.
+-   **UI:** Visual Hotbar (9 slots), Backpack (toggle via INV button), Crosshair.
 -   **Crafting:** Use the buttons on the bottom right to craft items.
 
 ## Features
