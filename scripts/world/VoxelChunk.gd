@@ -26,28 +26,10 @@ func generate():
 	var st = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 
-	# Using a basic material with vertex colors AND procedural noise texture
+	# Using a basic material with vertex colors
 	var material = StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
 	material.roughness = 1.0
-
-	# Create detail noise texture programmatically
-	var noise = FastNoiseLite.new()
-	noise.seed = 1234
-	noise.frequency = 0.1
-	var noise_tex = NoiseTexture2D.new()
-	noise_tex.noise = noise
-	noise_tex.width = 64
-	noise_tex.height = 64
-	noise_tex.seamless = true
-
-	# We rely on Godot to generate this texture (async usually),
-	# but NoiseTexture2D might not be ready instantly?
-	# Better to use a static or global material to avoid recreating noise per chunk.
-	# But for prototype, we can use simple UVs with a 1x1 white texture tint or just vertex colors.
-	# Actually, adding a detail texture adds "texture" feel.
-	material.albedo_texture = noise_tex
-	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 
 	mesh_instance.material_override = material
 
@@ -121,10 +103,10 @@ func create_block_mesh(st : SurfaceTool, x, y, z, type, global_pos):
 	# Check neighbors (simple check against noise function)
 	# Top
 	if get_block_type(global_pos + Vector3i(0, 1, 0)) == BlockData.Type.AIR:
-		add_face(st, Vector3(x, y+1, z), Vector3(x+1, y+1, z), Vector3(x+1, y+1, z+1), Vector3(x, y+1, z+1), Vector3.UP)
+		add_face(st, Vector3(x, y+1, z+1), Vector3(x+1, y+1, z+1), Vector3(x+1, y+1, z), Vector3(x, y+1, z), Vector3.UP)
 	# Bottom
 	if get_block_type(global_pos + Vector3i(0, -1, 0)) == BlockData.Type.AIR:
-		add_face(st, Vector3(x, y, z+1), Vector3(x+1, y, z+1), Vector3(x+1, y, z), Vector3(x, y, z), Vector3.DOWN)
+		add_face(st, Vector3(x, y, z), Vector3(x+1, y, z), Vector3(x+1, y, z+1), Vector3(x, y, z+1), Vector3.DOWN)
 	# Left
 	if get_block_type(global_pos + Vector3i(-1, 0, 0)) == BlockData.Type.AIR:
 		add_face(st, Vector3(x, y, z), Vector3(x, y, z+1), Vector3(x, y+1, z+1), Vector3(x, y+1, z), Vector3.LEFT)
