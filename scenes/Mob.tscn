@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://mob_scene_id"]
+
+[ext_resource type="Script" path="res://scripts/ai/Mob.gd" id="1_mob_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mob"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_mob"]
+size = Vector3(1, 1, 1)
+
+[node name="Mob" type="CharacterBody3D"]
+script = ExtResource("1_mob_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_mob")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_mob")
+skeleton = NodePath("")
