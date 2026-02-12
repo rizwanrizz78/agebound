@@ -12,12 +12,12 @@ enum Type {
 }
 
 const COLORS = {
-	Type.DIRT: Color(0.4, 0.25, 0.1),
-	Type.GRASS: Color(0.2, 0.8, 0.2),
-	Type.STONE: Color(0.5, 0.5, 0.5),
-	Type.WOOD: Color(0.35, 0.2, 0.05),
-	Type.LEAVES: Color(0.1, 0.6, 0.1),
-	Type.SAND: Color(0.9, 0.8, 0.5),
+	Type.DIRT: Color(0.42, 0.3, 0.15), # Standard Dirt Brown
+	Type.GRASS: Color(0.3, 0.7, 0.2), # Vibrant Grass Green
+	Type.STONE: Color(0.55, 0.55, 0.6), # Blue-ish Grey Stone
+	Type.WOOD: Color(0.4, 0.25, 0.1), # Dark Wood
+	Type.LEAVES: Color(0.15, 0.55, 0.1), # Darker Green Leaves
+	Type.SAND: Color(0.9, 0.85, 0.6), # Pale Sand
 	Type.WATER: Color(0.2, 0.4, 0.9, 0.8)
 }
 

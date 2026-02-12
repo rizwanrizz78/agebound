@@ -97,6 +97,26 @@ func get_height_at(x, z):
 	var height = int((noise.get_noise_2d(x, z) + 1.0) * 0.5 * 32.0) + 16
 	return height
 
+func get_block_type(global_pos : Vector3i):
+	# 1. Check if modified
+	if modified_blocks.has(global_pos):
+		return modified_blocks[global_pos]
+
+	# 2. Check if chunk exists and ask it?
+	# Or recalculate procedurally (same logic as Chunk generation)
+	# It's safer to recalculate procedurally to avoid needing the chunk loaded in memory strictly,
+	# but for consistency with trees (which are probabilistic), we should ideally ask the chunk.
+
+	var chunk_pos = get_chunk_coord(Vector3(global_pos.x + 0.5, global_pos.y + 0.5, global_pos.z + 0.5))
+	if chunks.has(chunk_pos):
+		return chunks[chunk_pos].get_block_type(global_pos)
+
+	# Fallback: Procedural calculation
+	# Note: This duplicates logic from VoxelChunk.gd, which is risky for maintenance.
+	# But necessary if chunk is not loaded.
+	# For now, let's assume interactions only happen on loaded chunks.
+	return 0 # AIR
+
 func set_block(global_pos : Vector3i, type):
 	modified_blocks[global_pos] = type
 	# Find which chunk needs update

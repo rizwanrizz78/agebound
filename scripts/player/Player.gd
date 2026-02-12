@@ -80,14 +80,22 @@ func _process(delta):
 				break_timer += delta
 				if break_timer >= max_break_time:
 					var block_pos = Vector3i(floor(point.x - normal.x * 0.5), floor(point.y - normal.y * 0.5), floor(point.z - normal.z * 0.5))
-					# Remove block (set to AIR)
-					if world and world.has_method("set_block"):
-						world.set_block(block_pos, 0) # 0 is AIR
-						# Simple drop logic
-						if block_pos.y > 10:
-							Global.add_item("wood", 1)
-						else:
-							Global.add_item("stone", 1)
+
+					if world and world.has_method("get_block_type"):
+						var type = world.get_block_type(block_pos)
+						var item_name = "dirt" # Default
+
+						match type:
+							1: item_name = "dirt" # DIRT
+							2: item_name = "dirt" # GRASS drops dirt
+							3: item_name = "stone" # STONE
+							4: item_name = "wood" # WOOD
+							5: item_name = "sapling" # LEAVES (chance?)
+							6: item_name = "sand" # SAND
+
+						if type != 0: # Don't break AIR
+							world.set_block(block_pos, 0) # 0 is AIR
+							Global.add_item(item_name, 1)
 
 					break_timer = 0.0
 					# Do not force reset global, let player hold to keep breaking
