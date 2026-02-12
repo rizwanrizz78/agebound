@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3 uid="uid://ui_scene_id"]
+
+[ext_resource type="Script" path="res://scripts/ui/TouchControls.gd" id="1_touch_script"]
+[ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="2_hud_script"]
+
+[node name="UI" type="CanvasLayer"]
+
+[node name="TouchControls" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_touch_script")
+
+[node name="HUD" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_hud_script")
